@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/audio.wav", "destination": "/audio.wav" },
+    { "source": "/(.*)", "destination": "/api/index.js" }
+  ]
+}
