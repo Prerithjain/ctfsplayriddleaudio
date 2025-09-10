@@ -92,28 +92,7 @@ app.get("/", (req, res) => {
 // POST handler for answer checking (rate limited)
 app.post("/check", limiter, (req, res) => {
   const ans = (req.body.answer || "").trim().toLowerCase();
-  if (ans === "echo") {
-    res.send(`
-      <html>
-        <head><title>Correct Answer</title></head>
-        <body style="font-family: Poppins, sans-serif; background: #2b2b2b; color: #3fffcf; text-align: center; padding: 40px;">
-          <h2>✅ Well done! Your answer is correct.</h2>
-          <p>Echoes will guide you to the audio puzzle. Download and listen carefully!</p>
-          <a href="/audio.wav" style="color:#3fffcf; font-weight:bold;">Download audio.wav</a>
-        </body>
-      </html>
-    `);
-  } else {
-    res.send(`
-      <html>
-        <head><title>Try Again</title></head>
-        <body style="font-family: Poppins, sans-serif; background: #2b2b2b; color: #ff6b81; text-align: center; padding: 40px;">
-          <h2>❌ Oops! That’s not the right answer.</h2>
-          <a href="/" style="color:#fff0ff; text-decoration:underline;">Try again</a>
-        </body>
-      </html>
-    `);
-  }
+  if (ans === "echo") { res.send(<html> <head> <title>Correct Answer</title> <style> /* Same styles as above for consistency */ @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap'); body {font - family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #f0f0f0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; text-align: center; } h2 {margin - bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); } p {font - size: 1.1rem; opacity: 0.9; text-shadow: 0 1px 3px rgba(0,0,0,0.3); } a.download-link {display: inline-block; margin-top: 24px; padding: 12px 36px; font-size: 1.2rem; border-radius: 40px; background: #3fffcf; color: #2b2b2b; font-weight: 700; text-decoration: none; box-shadow: 0 4px 15px #3fffcfaa; animation: pulse 2.3s infinite; transition: background 0.3s ease; } a.download-link:hover {background: #1fc9a1; box-shadow: 0 6px 20px #1fc9a1aa; } @keyframes pulse {0 %, 100 % { box- shadow: 0 4px 15px #3fffcfaa; } 50% {box - shadow: 0 8px 24px #3fffcfcc; } } .fade-in {animation: fadeIn 1.2s ease forwards; opacity: 0; } @keyframes fadeIn {to {opacity:1;} } </style> </head> <body> <div class="fade-in"> <h2>Well done! Your answer is correct.</h2> <p>Echoes will guide you to the audio puzzle. Download and listen carefully!</p> <a href="/audio.wav" class="download-link" download>Download audio.wav</a> </div> </body> </html>); } else { res.send(<html> <head> <title>Try Again</title> <style> @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap'); body {font - family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #f0c0f0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; text-align: center; } h2 {margin - bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); color: #ff6b81; } a.tryagain-link {font - size: 1.1rem; color: #f0c0ff; text-decoration: underline; } a.tryagain-link:hover {color: #fff0ff; } .fade-in {animation: fadeIn 1.2s ease forwards; opacity: 0; } @keyframes fadeIn {to {opacity:1;} } </style> </head> <body> <div class="fade-in"> <h2>Oops! That’s not the right answer.</h2> <a href="/" class="tryagain-link">Try again</a> </div> </body> </html>); }
 });
 
 // Serve audio file statically
