@@ -4,6 +4,7 @@ const path = require("path");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // 🚨 Rate limiter for answer submissions
