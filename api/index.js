@@ -1,31 +1,46 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
-const Redis = require("ioredis");
 
-// CHANGE THIS: Provide your Redis connection string
-// Example: "rediss://default:XXXXXXXX@XXXXXX.upstash.io:6379"
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+const MAX_REQUESTS_PER_WINDOW = 10;
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..")));
 
-const RATE_LIMIT_WINDOW_SECONDS = 60; // 1 minute window
-const MAX_REQUESTS_PER_WINDOW = 10;   // 10 requests per minute per IP
-
 async function rateLimitMiddleware(req, res, next) {
   const clientIdentifier = req.ip;
   const redisKey = `rate_limit:${clientIdentifier}`;
-
   try {
-    const requestCount = await redis.incr(redisKey);
-    if (requestCount === 1) {
-      await redis.expire(redisKey, RATE_LIMIT_WINDOW_SECONDS);
+    // INCR the attempt count for the user's IP
+    const incrResp = await fetch(
+      `${UPSTASH_REDIS_REST_URL}/incr/${redisKey}`,
+      {
+        headers: { Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}` }
+      }
+    );
+    const { result: requestCount } = await incrResp.json();
+
+    // First request, set key to expire after window
+    if (parseInt(requestCount) === 1) {
+      await fetch(
+        `${UPSTASH_REDIS_REST_URL}/expire/${redisKey}/${RATE_LIMIT_WINDOW_SECONDS}`,
+        { headers: { Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}` } }
+      );
     }
-    if (requestCount > MAX_REQUESTS_PER_WINDOW) {
-      const ttl = await redis.ttl(redisKey);
-      res.setHeader('Retry-After', ttl);
+
+    if (parseInt(requestCount) > MAX_REQUESTS_PER_WINDOW) {
+      // Get time left to retry
+      const ttlResp = await fetch(
+        `${UPSTASH_REDIS_REST_URL}/ttl/${redisKey}`,
+        { headers: { Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}` } }
+      );
+      const { result: ttl } = await ttlResp.json();
+      res.setHeader("Retry-After", ttl);
       return res.status(429).send(`
         <html>
           <body style="font-family:sans-serif; text-align:center; background: #ffeeee;">
@@ -36,15 +51,15 @@ async function rateLimitMiddleware(req, res, next) {
       `);
     }
     next();
-  } catch (error) {
-    console.error("Rate limiting error:", error);
-    return res.status(500).send("Internal server error");
+  } catch (err) {
+    console.error("Upstash rate limit error:", err);
+    return res.status(500).send("Internal server error (Rate Limiter)");
   }
 }
 
-// Apply rate limiter globally (or restrict to puzzle/check endpoints)
 app.use(rateLimitMiddleware);
 
+// Styling and puzzle logic
 const pageStyle = `
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
