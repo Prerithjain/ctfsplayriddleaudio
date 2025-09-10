@@ -11,7 +11,7 @@ const MAX_REQUESTS_PER_WINDOW = 10;
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..")));
-
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 async function rateLimitMiddleware(req, res, next) {
   const clientIdentifier = req.ip;
   const redisKey = `rate_limit:${clientIdentifier}`;
